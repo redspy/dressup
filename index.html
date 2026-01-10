@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Premium Dress Up Game</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Left Panel: Categories 1-5 -->
+        <aside class="panel left-panel">
+            <div class="category-tabs" id="left-tabs">
+                <!-- Injected via JS -->
+            </div>
+            <div class="item-grid" id="left-grid">
+                <!-- Injected via JS -->
+            </div>
+        </aside>
+
+        <!-- Center Stage -->
+        <main class="stage">
+            <div class="doll-container" id="doll-container">
+                <img src="assets/base_doll.png" alt="Base Doll" class="base-doll">
+                <div class="wearables-layer" id="wearables-layer">
+                    <!-- Dropped items go here -->
+                </div>
+            </div>
+            <div class="controls">
+                <button id="reset-btn" class="control-btn">Reset All</button>
+            </div>
+        </main>
+
+        <!-- Right Panel: Categories 6-10 -->
+        <aside class="panel right-panel">
+            <div class="category-tabs" id="right-tabs">
+                <!-- Injected via JS -->
+            </div>
+            <div class="item-grid" id="right-grid">
+                <!-- Injected via JS -->
+            </div>
+        </aside>
+    </div>
+
+    <!-- Templates or Hidden Elements -->
+    <script src="script.js"></script>
+</body>
+</html>
