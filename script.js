@@ -193,29 +193,21 @@ function setupItemInteraction(itemEl, handleEl) {
     let startLeft, startTop;
     let startWidth;
 
-    const getClientPos = (e) => {
-        if (e.touches && e.touches.length > 0) {
-            return { x: e.touches[0].clientX, y: e.touches[0].clientY };
-        }
-        return { x: e.clientX, y: e.clientY };
-    };
+    // DRAG START
+    itemEl.addEventListener('pointerdown', (e) => {
+        if (e.target.closest('.remove-btn')) return; // Ignore remove button
+        if (e.target === handleEl) return; // Ignore handle (handled separately)
 
-    // Handler for starting Drag (Mouse + Touch)
-    const onDragStart = (e) => {
-        if (e.target === handleEl || e.target.closest('.remove-btn')) return;
-
-        // Prevent default touch behavior (scrolling/mouse-emulation)
-        if (e.type === 'touchstart') {
-            e.preventDefault();
-        }
-
-        e.stopPropagation(); // Don't deselect immediately
+        // Prevent default (text selection, scrolling etc)
+        e.preventDefault();
+        e.stopPropagation();
         selectItem(itemEl);
 
         isDragging = true;
-        const pos = getClientPos(e);
-        startX = pos.x;
-        startY = pos.y;
+        itemEl.setPointerCapture(e.pointerId);
+
+        startX = e.clientX;
+        startY = e.clientY;
         startLeft = itemEl.offsetLeft;
         startTop = itemEl.offsetTop;
 
@@ -229,62 +221,66 @@ function setupItemInteraction(itemEl, handleEl) {
             startLeft = itemEl.offsetLeft;
             startTop = itemEl.offsetTop;
         }
-    };
+    });
 
-    // Handler for starting Resize (Mouse + Touch)
-    const onResizeStart = (e) => {
-        // Prevent default touch behavior
-        if (e.type === 'touchstart') {
-            e.preventDefault();
+    // DRAG MOVE
+    itemEl.addEventListener('pointermove', (e) => {
+        if (!isDragging) return;
+        e.preventDefault();
+
+        const dx = e.clientX - startX;
+        const dy = e.clientY - startY;
+        itemEl.style.left = (startLeft + dx) + 'px';
+        itemEl.style.top = (startTop + dy) + 'px';
+    });
+
+    // DRAG END
+    itemEl.addEventListener('pointerup', (e) => {
+        if (isDragging) {
+            isDragging = false;
+            itemEl.releasePointerCapture(e.pointerId);
         }
+    });
+
+
+    // RESIZE START
+    handleEl.addEventListener('pointerdown', (e) => {
+        e.preventDefault();
         e.stopPropagation();
         isResizing = true;
-        const pos = getClientPos(e);
-        startX = pos.x;
+        handleEl.setPointerCapture(e.pointerId);
+
+        startX = e.clientX;
         startWidth = itemEl.querySelector('img').offsetWidth;
-    };
+    });
 
-    // Attach Start Listeners
-    itemEl.addEventListener('mousedown', onDragStart);
-    itemEl.addEventListener('touchstart', onDragStart, { passive: false });
+    // RESIZE MOVE
+    handleEl.addEventListener('pointermove', (e) => {
+        if (!isResizing) return;
+        e.preventDefault();
 
-    handleEl.addEventListener('mousedown', onResizeStart);
-    handleEl.addEventListener('touchstart', onResizeStart, { passive: false });
+        const dx = e.clientX - startX;
+        const newWidth = Math.max(50, startWidth + dx); // Min width 50
+        itemEl.querySelector('img').style.width = newWidth + 'px';
+    });
 
-    // Handler for Move (Window)
-    const onMove = (e) => {
-        if (!isDragging && !isResizing) return;
-
-        // Prevent scrolling on mobile while dragging/resizing
-        if (e.touches) {
-            e.preventDefault();
+    // RESIZE END
+    handleEl.addEventListener('pointerup', (e) => {
+        if (isResizing) {
+            isResizing = false;
+            handleEl.releasePointerCapture(e.pointerId);
         }
+    });
 
-        const pos = getClientPos(e);
-        const dx = pos.x - startX;
-
-        if (isDragging) {
-            const dy = pos.y - startY;
-            itemEl.style.left = (startLeft + dx) + 'px';
-            itemEl.style.top = (startTop + dy) + 'px';
-        } else if (isResizing) {
-            const newWidth = Math.max(50, startWidth + dx); // Min width 50
-            itemEl.querySelector('img').style.width = newWidth + 'px';
-        }
-    };
-
-    // Handler for End (Window)
-    const onEnd = () => {
+    // Cancel listeners (e.g. incoming call, scroll takeover)
+    itemEl.addEventListener('pointercancel', (e) => {
         isDragging = false;
+        itemEl.releasePointerCapture(e.pointerId);
+    });
+    handleEl.addEventListener('pointercancel', (e) => {
         isResizing = false;
-    };
-
-    // Attach Global Listeners
-    window.addEventListener('mousemove', onMove);
-    window.addEventListener('touchmove', onMove, { passive: false });
-
-    window.addEventListener('mouseup', onEnd);
-    window.addEventListener('touchend', onEnd);
+        handleEl.releasePointerCapture(e.pointerId);
+    });
 }
 
 function selectItem(el) {

@@ -200,6 +200,7 @@ body {
     border-radius: 50%;
     cursor: nwse-resize;
     display: none;
+    touch-action: none;
 }
 
 .worn-item.selected .resize-handle {
@@ -222,6 +223,7 @@ body {
     font-size: 12px;
     font-weight: bold;
     border: 2px solid white;
+    touch-action: none;
 }
 
 .worn-item.selected .remove-btn {
