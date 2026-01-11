@@ -24,9 +24,16 @@ const CONFIG = {
 // Initialize Mock Data
 // Using generated assets where available, placeholders otherwise.
 const ASSETS = {
+    'hair': ['assets/items/hair_01.png'],
+    'hat': ['assets/items/hat_01.png'],
     'top': ['assets/items/top_01.png'],
     'bottom': ['assets/items/bottom_01.png'],
-    'hat': ['assets/items/hat_01.png']
+    'acc': ['assets/items/acc_01.png'],
+    'shoes': ['assets/items/shoes_01.png'],
+    'socks': ['assets/items/socks_01.png'],
+    'outer': ['assets/items/outer_01.png'],
+    'face': ['assets/items/face_01.png'],
+    'bg': ['assets/items/bg_01.png']
 };
 
 function generateMockItems() {
@@ -186,56 +193,98 @@ function setupItemInteraction(itemEl, handleEl) {
     let startLeft, startTop;
     let startWidth;
 
-    // Selection
-    itemEl.addEventListener('mousedown', (e) => {
-        if (e.target === handleEl) return; // Let handle logic take over
+    const getClientPos = (e) => {
+        if (e.touches && e.touches.length > 0) {
+            return { x: e.touches[0].clientX, y: e.touches[0].clientY };
+        }
+        return { x: e.clientX, y: e.clientY };
+    };
+
+    // Handler for starting Drag (Mouse + Touch)
+    const onDragStart = (e) => {
+        if (e.target === handleEl || e.target.closest('.remove-btn')) return;
+
+        // Prevent default touch behavior (scrolling/mouse-emulation)
+        if (e.type === 'touchstart') {
+            e.preventDefault();
+        }
+
         e.stopPropagation(); // Don't deselect immediately
         selectItem(itemEl);
 
         isDragging = true;
-        startX = e.clientX;
-        startY = e.clientY;
+        const pos = getClientPos(e);
+        startX = pos.x;
+        startY = pos.y;
         startLeft = itemEl.offsetLeft;
         startTop = itemEl.offsetTop;
 
-        // Remove transform translate centering if present, to switch to absolute positioning
-        // We need to calculate current computed position first if it was transformed
+        // Remove transform translate centering if present
         if (itemEl.style.transform.includes('translate')) {
             const rect = itemEl.getBoundingClientRect();
             const parentRect = itemEl.parentElement.getBoundingClientRect();
             itemEl.style.transform = 'none';
-            // Set left/top to current visual position relative to parent
             itemEl.style.left = (rect.left - parentRect.left) + 'px';
             itemEl.style.top = (rect.top - parentRect.top) + 'px';
             startLeft = itemEl.offsetLeft;
             startTop = itemEl.offsetTop;
         }
-    });
+    };
 
-    handleEl.addEventListener('mousedown', (e) => {
+    // Handler for starting Resize (Mouse + Touch)
+    const onResizeStart = (e) => {
+        // Prevent default touch behavior
+        if (e.type === 'touchstart') {
+            e.preventDefault();
+        }
         e.stopPropagation();
         isResizing = true;
-        startX = e.clientX;
+        const pos = getClientPos(e);
+        startX = pos.x;
         startWidth = itemEl.querySelector('img').offsetWidth;
-    });
+    };
 
-    window.addEventListener('mousemove', (e) => {
+    // Attach Start Listeners
+    itemEl.addEventListener('mousedown', onDragStart);
+    itemEl.addEventListener('touchstart', onDragStart, { passive: false });
+
+    handleEl.addEventListener('mousedown', onResizeStart);
+    handleEl.addEventListener('touchstart', onResizeStart, { passive: false });
+
+    // Handler for Move (Window)
+    const onMove = (e) => {
+        if (!isDragging && !isResizing) return;
+
+        // Prevent scrolling on mobile while dragging/resizing
+        if (e.touches) {
+            e.preventDefault();
+        }
+
+        const pos = getClientPos(e);
+        const dx = pos.x - startX;
+
         if (isDragging) {
-            const dx = e.clientX - startX;
-            const dy = e.clientY - startY;
+            const dy = pos.y - startY;
             itemEl.style.left = (startLeft + dx) + 'px';
             itemEl.style.top = (startTop + dy) + 'px';
         } else if (isResizing) {
-            const dx = e.clientX - startX;
             const newWidth = Math.max(50, startWidth + dx); // Min width 50
             itemEl.querySelector('img').style.width = newWidth + 'px';
         }
-    });
+    };
 
-    window.addEventListener('mouseup', () => {
+    // Handler for End (Window)
+    const onEnd = () => {
         isDragging = false;
         isResizing = false;
-    });
+    };
+
+    // Attach Global Listeners
+    window.addEventListener('mousemove', onMove);
+    window.addEventListener('touchmove', onMove, { passive: false });
+
+    window.addEventListener('mouseup', onEnd);
+    window.addEventListener('touchend', onEnd);
 }
 
 function selectItem(el) {
